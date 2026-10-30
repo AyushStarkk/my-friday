@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#020b13">
+<title>J.A.R.V.I.S. AI</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:radial-gradient(circle at center,#092b35,#020910 75%);
+ color:#00f5d4;
+ font-family:Arial,sans-serif;
+ min-height:100vh;
+ overflow-x:hidden;
+ text-align:center;
+}
+header{
+ padding:22px 10px 5px;
+ letter-spacing:5px;
+ font-size:27px;
+ font-weight:bold;
+ text-shadow:0 0 15px #00eaff;
+}
+.sub{font-size:10px;letter-spacing:4px;color:#7affc8}
+.clock{margin-top:18px;font-size:24px;color:#aaffdb}
+.date{font-size:12px;color:#72b9bd;margin-top:5px}
+
+.reactor{
+ width:210px;height:210px;
+ border:3px solid #00ffd0;
+ border-radius:50%;
+ margin:35px auto 25px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ position:relative;
+ box-shadow:0 0 15px #00ffd0, inset 0 0 25px #00ffd0;
+ animation:glow 2s infinite alternate;
+}
+.reactor:before,.reactor:after{
+ content:"";position:absolute;border-radius:50%;
+ border:2px dashed #00d9ff;
+ inset:12px;
+ animation:spin 12s linear infinite;
+}
+.reactor:after{
+ inset:30px;
+ border:2px solid #00ff99;
+ animation:spin 8s linear infinite reverse;
+}
+.core{
+ width:90px;height:90px;
+ border-radius:50%;
+ background:radial-gradient(circle,#ffffff,#00ffcc 25%,#007d91 65%,transparent 75%);
+ box-shadow:0 0 35px #00ffd0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes glow{
+ from{box-shadow:0 0 10px #00ffd0,inset 0 0 15px #00ffd0}
+ to{box-shadow:0 0 35px #00ffd0,inset 0 0 35px #00ffd0}
+}
+.status{
+ color:#9effc9;
+ font-size:12px;
+ letter-spacing:3px;
+ margin:15px;
+}
+.panel{
+ margin:15px auto;
+ width:90%;max-width:430px;
+ border:1px solid #00cdb5;
+ border-radius:14px;
+ background:#041923cc;
+ padding:15px;
+ box-shadow:0 0 15px #003e4c;
+}
+#response{
+ min-height:65px;
+ font-size:15px;
+ line-height:1.6;
+ color:white;
+}
+#userText{color:#00ffc3;font-size:13px}
+button{
+ background:transparent;
+ border:1.5px solid #00f5c8;
+ color:#00ffd0;
+ border-radius:30px;
+ padding:13px 19px;
+ margin:6px;
+ font-weight:bold;
+ cursor:pointer;
+ transition:.2s;
+ box-shadow:0 0 8px #00a99a;
+}
+button:active{
+ transform:scale(.90);
+ background:#006b61;
+}
+button:hover{background:#064b49}
+.mic{
+ width:85px;height:85px;
+ font-size:30px;
+ border-radius:50%;
+ background:#053a3a;
+ box-shadow:0 0 25px #00ffd0;
+}
+.list{
+ text-align:left;
+ font-size:12px;
+ line-height:2;
+ color:#a5dcd4;
+}
+input{
+ width:70%;
+ background:#00151d;
+ border:1px solid #00eac2;
+ border-radius:20px;
+ padding:13px;
+ color:white;
+ outline:none;
+}
+footer{
+ padding:25px;
+ font-size:10px;
+ letter-spacing:2px;
+ color:#477f80;
+}
+</style>
+</head>
+
+<body>
+
+<header>J.A.R.V.I.S.</header>
+<div class="sub">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+
+<div class="clock" id="clock">00:00:00</div>
+<div class="date" id="date"></div>
+
+<div class="reactor">
+ <div class="core"></div>
+</div>
+
+<div class="status" id="status">SYSTEM STANDBY</div>
+
+<div class="panel">
+ <div id="userText">Awaiting your command, Sir...</div>
+ <hr style="border-color:#164a4a">
+ <div id="response">
+ Good day, Sir. JARVIS is ready.
+ </div>
+</div>
+
+<button class="mic" onclick="startListening()">🎤</button>
+<br>
+<button onclick="startWake()">ACTIVATE HEY JARVIS</button>
+<button onclick="stopListening()">STOP LISTENING</button>
+
+<div class="panel">
+ <div style="color:#00ffc3;margin-bottom:12px">
+ COMMAND CONSOLE
+ </div>
+ <input id="command" placeholder="Type your command...">
+ <button onclick="sendText()">SEND</button>
+</div>
+
+<div class="panel list">
+ <b style="color:#00ffc3">AVAILABLE COMMANDS</b><br>
+ • Hello Jarvis<br>
+ • What is the time?<br>
+ • What is today's date?<br>
+ • Open YouTube<br>
+ • Open Google<br>
+ • Search for [anything]<br>
+ • Calculate [expression]<br>
+ • Who are you?<br>
+ • Tell me a joke<br>
+ • Weather in [city]<br>
+ • Hey Jarvis
+</div>
+
+<footer>
+ J.A.R.V.I.S. VERSION 1.0<br>
+ CREATED FOR AYUSH STARK ⚡
+</footer>
+
+<script>
+const statusBox=document.getElementById("status");
+const responseBox=document.getElementById("response");
+const userBox=document.getElementById("userText");
+
+let recognition;
+let listening=false;
+let wakeMode=false;
+let speaking=false;
+
+function clock(){
+ const now=new Date();
+ document.getElementById("clock").textContent=
+ now.toLocaleTimeString("en-IN");
+ document.getElementById("date").textContent=
+ now.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+setInterval(clock,1000);
+clock();
+
+function say(text){
+ responseBox.textContent=text;
+ if(!("speechSynthesis" in window))return;
+
+ speechSynthesis.cancel();
+ speaking=true;
+
+ const utterance=new SpeechSynthesisUtterance(text);
+ const voices=speechSynthesis.getVoices();
+
+ // Prefer a male English voice where available
+ let voice=voices.find(v=>
+  /male/i.test(v.name) && /en/i.test(v.lang)
+ );
+
+ if(!voice) voice=voices.find(v=>
+  /en-GB/i.test(v.lang)
+ );
+
+ if(!voice) voice=voices.find(v=>
+  /en/i.test(v.lang)
+ );
+
+ if(voice){
+  utterance.voice=voice;
+  utterance.lang=voice.lang;
+ }else{
+  utterance.lang="en-IN";
+ }
+
+ utterance.rate=0.92;
+ utterance.pitch=0.85;
+ utterance.volume=1;
+
+ utterance.onend=()=>{speaking=false};
+ utterance.onerror=()=>{speaking=false};
+
+ speechSynthesis.speak(utterance);
+}
+
+function reply(text){
+ statusBox.textContent="PROCESSING COMMAND...";
+ say(text);
+ setTimeout(()=>{
+  if(!listening)statusBox.textContent="SYSTEM ONLINE";
+ },1500);
+}
+
+function processCommand(input){
+ let cmd=input.toLowerCase().trim();
+
+ userBox.textContent="YOU: "+input;
+
+ if(cmd.includes("hello") || cmd.includes("hi jarvis")){
+  reply("Hello Sir. It is a pleasure to assist you.");
+ }
+ else if(cmd.includes("who are you")){
+  reply("I am Jarvis, your personal virtual assistant. At your service, Sir.");
+ }
+ else if(cmd.includes("time")){
+  reply("The current time is "+new Date().toLocaleTimeString());
+ }
+ else if(cmd.includes("date") || cmd.includes("today")){
+  reply("Today is "+new Date().toDateString());
+ }
+ else if(cmd.includes("open youtube")){
+  reply("Opening YouTube, Sir.");
+  setTimeout(()=>window.open("https://youtube.com","_blank"),800);
+ }
+ else if(cmd.includes("open google")){
+  reply("Opening Google, Sir.");
+  setTimeout(()=>window.open("https://google.com","_blank"),800);
+ }
+ else if(cmd.includes("open instagram")){
+  reply("Opening Instagram, Sir.");
+  setTimeout(()=>window.open("https://instagram.com","_blank"),800);
+ }
+ else if(cmd.startsWith("search for ") || cmd.startsWith("search ")){
+  let query=cmd.replace(/^search for |^search /,"");
+  reply("Searching the internet for "+query);
+  setTimeout(()=>{
+   window.open("https://www.google.com/search?q="+encodeURIComponent(query),"_blank");
+  },700);
+ }
+ else if(cmd.startsWith("weather")){
+  let city=cmd.replace("weather","").replace("in","").trim();
+  if(!city)city="Meerut";
+  reply("Searching weather information for "+city);
+  setTimeout(()=>{
+   window.open("https://www.google.com/search?q="+encodeURIComponent("weather "+city),"_blank");
+  },700);
+ }
+ else if(cmd.startsWith("calculate ")){
+  let expression=cmd.replace("calculate ","").replace(/x/g,"*");
+  if(/^[0-9+\-*/().%\s]+$/.test(expression)){
+   try{
+    let result=Function('"use strict";return ('+expression+')')();
+    reply("The answer is "+result);
+   }catch(e){reply("Sorry Sir, I could not calculate that.");}
+  }else{
+   reply("Please provide a valid mathematical expression.");
+  }
+ }
+ else if(cmd.includes("joke")){
+  reply("Why did the computer go to the doctor? Because it had a virus. Ha ha.");
+ }
+ else if(cmd.includes("thank")){
+  reply("You are welcome, Sir. Always happy to help.");
+ }
+ else if(cmd.includes("stop")){
+  stopListening();
+  reply("Voice recognition stopped, Sir.");
+ }
+ else{
+  reply("I heard you, Sir. Advanced AI brain is not connected yet. Please use search commands or basic commands.");
+ }
+}
+
+function createRecognition(){
+ const SpeechRecognition=
+ window.SpeechRecognition || window.webkitSpeechRecognition;
+
+ if(!SpeechRecognition){
+  say("Sorry Sir. Speech recognition is not supported in this browser.");
+  return null;
+ }
+
+ const r=new SpeechRecognition();
+ r.lang="en-IN";
+ r.continuous=true;
+ r.interimResults=false;
+
+ r.onstart=()=>{
+  listening=true;
+  statusBox.textContent=wakeMode?"HEY JARVIS MODE ACTIVE":"LISTENING...";
+ };
+
+ r.onresult=(event)=>{
+  const result=event.results[event.results.length-1][0].transcript;
+  const text=result.toLowerCase().trim();
+
+  if(wakeMode){
+   if(text.includes("hey jarvis")){
+    const command=text.replace("hey jarvis","").trim();
+    statusBox.textContent="JARVIS ACTIVATED";
+
+    if(command){
+     processCommand(command);
+    }else{
+     say("Yes Sir. How can I help you?");
+    }
+   }
+  }else{
+   processCommand(result);
+  }
+ };
+
+ r.onerror=(event)=>{
+  if(event.error==="not-allowed"){
+   statusBox.textContent="MICROPHONE PERMISSION DENIED";
+  }else{
+   statusBox.textContent="VOICE ERROR: "+event.error;
+  }
+ };
+
+ r.onend=()=>{
+  listening=false;
+  if(wakeMode){
+   setTimeout(()=>{
+    if(wakeMode && !listening){
+     try{r.start()}catch(e){}
+    }
+   },800);
+  }else{
+   statusBox.textContent="SYSTEM ONLINE";
+  }
+ };
+
+ return r;
+}
+
+function startListening(){
+ wakeMode=false;
+ if(recognition){
+  try{recognition.stop()}catch(e){}
+ }
+ recognition=createRecognition();
+ if(recognition){
+  try{recognition.start()}catch(e){
+   statusBox.textContent="PLEASE TRY AGAIN";
+  }
+ }
+}
+
+function startWake(){
+ wakeMode=true;
+ if(recognition){
+  try{recognition.stop()}catch(e){}
+ }
+ recognition=createRecognition();
+ if(recognition){
+  try{recognition.start()}catch(e){
+   statusBox.textContent="PLEASE TRY AGAIN";
+  }
+ }
+}
+
+function stopListening(){
+ wakeMode=false;
+ listening=false;
+ if(recognition){
+  try{recognition.stop()}catch(e){}
+ }
+ if("speechSynthesis" in window)speechSynthesis.cancel();
+ statusBox.textContent="SYSTEM STANDBY";
+}
+
+function sendText(){
+ const input=document.getElementById("command");
+ if(!input.value.trim())return;
+ processCommand(input.value);
+ input.value="";
+}
+
+document.getElementById("command").addEventListener("keydown",e=>{
+ if(e.key==="Enter")sendText();
+});
+
+if("speechSynthesis" in window){
+ speechSynthesis.onvoiceschanged=()=>{};
+}
+
+</script>
+</body>
+   </html>
